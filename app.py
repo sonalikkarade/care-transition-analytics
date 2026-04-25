@@ -68,10 +68,10 @@ footer, header {visibility:hidden;}
 def load_data():
     df = pd.read_csv("HHS_Unaccompanied_Alien_Children_Program.csv")
 
-    # 🔥 FIX 1: Clean column names properly
+    # ✅ Fix column names
     df.columns = df.columns.str.strip().str.replace("*", "", regex=False)
 
-    # 🔥 FIX 2: Convert to numeric
+    # ✅ Convert numeric columns
     numeric_cols = [
         'Children apprehended and placed in CBP custody',
         'Children in CBP custody',
@@ -84,9 +84,11 @@ def load_data():
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
 
-    df.fillna(0, inplace=True)
+    # ✅ FIX: Fill only numeric columns (cloud-safe)
+    num_cols = df.select_dtypes(include=['number']).columns
+    df[num_cols] = df[num_cols].fillna(0)
 
-    # 🔥 FIX 3: Correct KPI formulas
+    # ✅ KPIs
     df['Transfer Efficiency'] = (
         df['Children transferred out of CBP custody'] /
         df['Children in CBP custody'].replace(0, 1)
@@ -120,7 +122,7 @@ if 'Date' in df.columns:
     start, end = st.date_input("Select Date Range", [df['Date'].min(), df['Date'].max()])
     df = df[(df['Date'] >= pd.to_datetime(start)) & (df['Date'] <= pd.to_datetime(end))]
 
-# 🔥 FIX 4: Take latest AFTER filtering
+# ✅ FIX: latest AFTER filtering
 latest = df.iloc[-1]
 
 # ---------------- TITLE ----------------
@@ -152,11 +154,11 @@ st.plotly_chart(fig1, use_container_width=True)
 col1, col2 = st.columns(2)
 
 with col1:
-    fig2 = px.line(df, x='Date', y='Transfer Efficiency', title="Transfer Efficiency")
+    fig2 = px.line(df, x='Date', y='Transfer Efficiency')
     st.plotly_chart(fig2, use_container_width=True)
 
 with col2:
-    fig3 = px.line(df, x='Date', y='Discharge Effectiveness', title="Discharge Effectiveness")
+    fig3 = px.line(df, x='Date', y='Discharge Effectiveness')
     st.plotly_chart(fig3, use_container_width=True)
 
 # ---------------- BOTTLENECK ----------------
